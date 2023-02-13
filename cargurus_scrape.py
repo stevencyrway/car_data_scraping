@@ -38,20 +38,19 @@ driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install())
 ##entity for models: d2978 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma
 # models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
 zipcode = os.environ.get("zipcode")
-distance = 100
-models = ['d2430']
+distance = 50
+# models = ['d2430']
+# models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
+models = ['d590', 'd404', 'd311']
 # models_start_year = {"d2974": "2021", "d590": "2003", "d311": "2020", "d2430": "2017", "d404": "2009"}
 max_price = 150000
 ################# Beginning of code #######################
 
 from tqdm import tqdm
 
-temp = []
-progress_count = []
-url_list = []
-
 for model in models:
-
+    temp = []
+    url_list = []
     link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(zip=zipcode, dist=distance, model=model, maxprice=max_price)
     number_extract_pattern = "\\d+"
 
@@ -101,6 +100,10 @@ for model in models:
             ## Parses all the info about the car and the listing into a json attribute:value pair
             info = {(e.find_previous_sibling('dt').text.strip()).replace(':', ''): e.text.strip() for e in
                     soup2.select('dt + dd')}
+            try:
+                price = soup2.find("div", {"class": "sVIZRf"}).getText().replace('$', '').replace(',', '')
+            except:
+                continue
             accident_status = soup2.find("span", {"class": "aWYTCL"}).getText()
             try:
                 dealer_name = soup2.find("a", {"class": "KA8oQB"}).getText()
@@ -121,29 +124,33 @@ for model in models:
             except:
                 number_of_saves = 0
             temp.append([insert_time, first_date_available, first_date_listed, accident_status, dealer_name,
-                         dealer_address, days_on_cargurus, days_at_dealership, car_data_json, number_of_saves])
+                         dealer_address, days_on_cargurus, days_at_dealership, car_data_json, number_of_saves,
+                         price])
             # perform other operations within the url
         except TimeoutException as e:
             continue
         # Sleep a random number of seconds (between 1 and 5)
-        sleep(randint(1, 5))
+        sleep(randint(0, 3))
+    df = pd.DataFrame(temp)
+    data = df.rename(columns={0: "insert_time", 1: "first_date_available", 2: "first_date_listed", 3: "accident_status",
+                              4: "dealer_name",
+                              5: "dealer_address", 6: "days_on_cargurus", 7: "days_at_dealership", 8: "car_data_json",
+                              9: "number_of_saves", 10: "price"})
+    # establish connections
+    user = os.environ.get("postgres-user")
+    password = os.environ.get("postgres-pass")
+    host = os.environ.get("postgres-host")
+    conn_string = 'postgresql://{user}:{password}@{host}:25060/defaultdb'.format(password=password, user=user,
+                                                                                 host=host)
+
+    db = create_engine(conn_string)
+    conn = db.connect()
+
+    # converting data to sql
+    data.to_sql('raw_cargurus_scrape', db, schema='public', if_exists='append', index=False)
+
+    count = len(df).__str__()
+    print(count + " car(s) found and added to data source.")
+
 driver.close()
 driver.quit()
-df = pd.DataFrame(temp)
-data = df.rename(columns={0: "insert_time", 1: "first_date_available", 2: "first_date_listed", 3: "accident_status", 4: "dealer_name",
-                          5: "dealer_address", 6: "days_on_cargurus", 7: "days_at_dealership", 8: "car_data_json", 9: "number_of_saves"})
-
-# establish connections
-user = os.environ.get("postgres-user")
-password = os.environ.get("postgres-pass")
-host = os.environ.get("postgres-host")
-conn_string = 'postgresql://{user}:{password}@{host}:25060/defaultdb'.format(password=password, user=user, host=host)
-
-db = create_engine(conn_string)
-conn = db.connect()
-
-# converting data to sql
-data.to_sql('raw_cargurus_scrape', db, schema='public', if_exists='append', index=False)
-
-count = len(df).__str__()
-print(count + " car(s) found and added to data source.")
