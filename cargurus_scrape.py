@@ -21,7 +21,8 @@ import pytz
 from random import randint
 from time import sleep
 from sqlalchemy import create_engine
-
+from ezprogress.progressbar import ProgressBar
+import time
 
 # Create Chromeoptions instance
 options = webdriver.ChromeOptions()
@@ -38,20 +39,24 @@ driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install())
 ##entity for models: d2978 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma
 # models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
 zipcode = os.environ.get("zipcode")
-distance = 50
+distance = 500
 # models = ['d2430']
-# models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
-models = ['d590', 'd404', 'd311']
+models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
+# models = ['d311', 'd404']
 # models_start_year = {"d2974": "2021", "d590": "2003", "d311": "2020", "d2430": "2017", "d404": "2009"}
 max_price = 150000
 ################# Beginning of code #######################
 
 from tqdm import tqdm
+model_current_step = 0
+pb2 = ProgressBar(int(len(models)), bar_length=100)
+pb2.start()
 
 for model in models:
     temp = []
     url_list = []
-    link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(zip=zipcode, dist=distance, model=model, maxprice=max_price)
+    # &transmission=M
+    link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?&maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(zip=zipcode, dist=distance, model=model, maxprice=max_price)
     number_extract_pattern = "\\d+"
 
     driver.get(link)
@@ -61,8 +66,20 @@ for model in models:
     number_of_results = int(soup.find("span", {"class": "eegHEr"}).getText().split(' of ')[0].split(' - ')[1])
     number_of_pages_to_search_for = math.ceil(number_of_records / number_of_results)
 
+    # Number of steps in your total script
+    steps_needed = number_of_records
+    current_step = 0
+
+
+    # setup progress bar
+
+    pb = ProgressBar(number_of_pages_to_search_for, bar_length=100)
+    pb.start()
+
+
     print("\n ** {number} cars found".format(number=number_of_records))
     print("\n ** pages processing: {}".format(number_of_pages_to_search_for))
+
     assert "CarGurus" in driver.title
     for i in range(number_of_pages_to_search_for):
         # try:
@@ -127,10 +144,13 @@ for model in models:
                          dealer_address, days_on_cargurus, days_at_dealership, car_data_json, number_of_saves,
                          price])
             # perform other operations within the url
+            # Increment counter
+            current_step += 1
+            pb.update(current_step)
         except TimeoutException as e:
             continue
         # Sleep a random number of seconds (between 1 and 5)
-        sleep(randint(0, 3))
+        # sleep(randint(0, 3))
     df = pd.DataFrame(temp)
     data = df.rename(columns={0: "insert_time", 1: "first_date_available", 2: "first_date_listed", 3: "accident_status",
                               4: "dealer_name",
@@ -142,7 +162,6 @@ for model in models:
     host = os.environ.get("postgres-host")
     conn_string = 'postgresql://{user}:{password}@{host}:25060/defaultdb'.format(password=password, user=user,
                                                                                  host=host)
-
     db = create_engine(conn_string)
     conn = db.connect()
 
@@ -150,7 +169,11 @@ for model in models:
     data.to_sql('raw_cargurus_scrape', db, schema='public', if_exists='append', index=False)
 
     count = len(df).__str__()
-    print(count + " car(s) found and added to data source.")
+    print("\n ** " + count + " car(s) found and added to data source.")
+    model_current_step += 1
+    pb.update(model_current_step)
 
+pb.finished()
+print("finished")
 driver.close()
 driver.quit()
