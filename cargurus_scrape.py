@@ -37,7 +37,7 @@ driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install())
 ## values 10,25,50,100,150,200,500,50000 (nationwide)
 ##entity for models: d2978 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma
 # models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
-zipcode = 78645
+zipcode = os.environ.get("zipcode")
 distance = 100
 models = ['d2430']
 # models_start_year = {"d2974": "2021", "d590": "2003", "d311": "2020", "d2430": "2017", "d404": "2009"}

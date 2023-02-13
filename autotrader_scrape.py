@@ -16,12 +16,13 @@ from datetime import timedelta
 import re
 import pytz
 from sqlalchemy import create_engine
+import os
 
 driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
 
 ################# Enter Values Here #####################
 
-zipcode = 78645
+zipcode = os.environ.get("zipcode")
 ## values 10,25,50,100,500,50000 (nationwide)
 distance = 25
 ## this gets the intial listings based on about 15 cars per page.
