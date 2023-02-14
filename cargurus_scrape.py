@@ -36,15 +36,16 @@ driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install())
 
 ################# Enter Values Here #####################
 ## values 10,25,50,100,150,200,500,50000 (nationwide)
-##entity for models: d2978 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma
+##entity for models: d2978 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma, d3236 bmw i4
 # models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
 zipcode = os.environ.get("zipcode")
 distance = 500
 # models = ['d2430']
-models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
-# models = ['d311', 'd404']
-# models_start_year = {"d2974": "2021", "d590": "2003", "d311": "2020", "d2430": "2017", "d404": "2009"}
+models = ['d3236', 'd2396', 'd2974', 'd2430', 'd590', 'd404', 'd311', 'd2396']
+models_without_manual = ['d2974', 'd3236', 'd3156']
+models_pre_2007 = ['d590']
 max_price = 150000
+# &startYear=2020
 ################# Beginning of code #######################
 
 from tqdm import tqdm
@@ -55,10 +56,17 @@ pb2.start()
 for model in models:
     temp = []
     url_list = []
-    # &transmission=M
-    link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?&maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(zip=zipcode, dist=distance, model=model, maxprice=max_price)
+    if model not in models_without_manual:
+        if model in models_pre_2007:
+            link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?&transmission=M&startYear=2017&maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(
+                zip=zipcode, dist=distance, model=model, maxprice=max_price)
+        elif model not in models_pre_2007:
+            link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?&transmission=M&maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(
+                zip=zipcode, dist=distance, model=model, maxprice=max_price)
+    elif model in models_without_manual:
+        link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?&startYear=2021&maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(
+            zip=zipcode, dist=distance, model=model, maxprice=max_price)
     number_extract_pattern = "\\d+"
-
     driver.get(link)
     html = driver.page_source
     soup = BeautifulSoup(html, "html.parser")
@@ -73,9 +81,8 @@ for model in models:
 
     # setup progress bar
 
-    pb = ProgressBar(number_of_pages_to_search_for, bar_length=100)
+    pb = ProgressBar(number_of_records, bar_length=100)
     pb.start()
-
 
     print("\n ** {number} cars found".format(number=number_of_records))
     print("\n ** pages processing: {}".format(number_of_pages_to_search_for))
@@ -171,7 +178,7 @@ for model in models:
     count = len(df).__str__()
     print("\n ** " + count + " car(s) found and added to data source.")
     model_current_step += 1
-    pb.update(model_current_step)
+    pb2.update(model_current_step)
 
 pb.finished()
 print("finished")
