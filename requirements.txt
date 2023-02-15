@@ -1,0 +1,7 @@
+selenium~=4.8.0
+pandas~=1.5.3
+pytz~=2022.7.1
+beautifulsoup4~=4.11.2
+SQLAlchemy~=2.0.1
+ezprogress~=1.0.6
+tqdm~=4.64.1
