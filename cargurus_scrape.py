@@ -36,15 +36,15 @@ driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install())
 
 ################# Enter Values Here #####################
 ## values 10,25,50,100,150,200,500,50000 (nationwide)
-##entity for models: d2978 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma, d3236 bmw i4
+##entity for models: d2974 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma, d3236 bmw i4
 # models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
 zipcode = os.environ.get("zipcode")
-distance = 500
+distance = 50000
 # models = ['d2430']
-models = ['d3236', 'd2396', 'd2974', 'd2430', 'd590', 'd404', 'd311', 'd2396']
-models_without_manual = ['d2974', 'd3236', 'd3156']
+models = ['d2974', 'd2430', 'd590', 'd404', 'd311', 'd2396', 'd3155', '3156']
+models_without_manual = ['d2974', 'd3155', 'd3156']
 models_pre_2007 = ['d590']
-max_price = 150000
+max_price = 130000
 # &startYear=2020
 ################# Beginning of code #######################
 
