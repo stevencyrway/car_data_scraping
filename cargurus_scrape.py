@@ -36,12 +36,12 @@ driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install())
 
 ################# Enter Values Here #####################
 ## values 10,25,50,100,150,200,500,50000 (nationwide)
-##entity for models: d2974 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma, d3236 bmw i4
+##entity for models: d2974 - taycan, d590 - honda element, d2430 - 718 cayman, d404 - 911, d311 - Tacoma,
 # models = ['d2974', 'd2430', 'd590', 'd404', 'd311']
 zipcode = os.environ.get("zipcode")
 distance = 50000
-# models = ['d2430']
-models = ['d2974', 'd2430', 'd590', 'd404', 'd311', 'd2396', 'd3155', '3156']
+# models = ['d3156']
+models = ['d2974', 'd2430', 'd590', 'd404', 'd311', 'd2396', 'd3155', 'd3156']
 models_without_manual = ['d2974', 'd3155', 'd3156']
 models_pre_2007 = ['d590']
 max_price = 130000
@@ -57,10 +57,10 @@ for model in models:
     temp = []
     url_list = []
     if model not in models_without_manual:
-        if model in models_pre_2007:
+        if model not in models_pre_2007:
             link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?&transmission=M&startYear=2017&maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(
                 zip=zipcode, dist=distance, model=model, maxprice=max_price)
-        elif model not in models_pre_2007:
+        elif model in models_pre_2007:
             link = "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?&transmission=M&maxAccidents=0&zip={zip}&sortDir=ASC&distance={dist}&maxPrice={maxprice}&entitySelectingHelper.selectedEntity={model}".format(
                 zip=zipcode, dist=distance, model=model, maxprice=max_price)
     elif model in models_without_manual:
@@ -164,9 +164,9 @@ for model in models:
                               5: "dealer_address", 6: "days_on_cargurus", 7: "days_at_dealership", 8: "car_data_json",
                               9: "number_of_saves", 10: "price"})
     # establish connections
-    user = os.environ.get("postgres-user")
-    password = os.environ.get("postgres-pass")
-    host = os.environ.get("postgres-host")
+    user = os.environ.get("postgresuser")
+    password = os.environ.get("postgrespass")
+    host = os.environ.get("postgreshost")
     conn_string = 'postgresql://{user}:{password}@{host}:25060/defaultdb'.format(password=password, user=user,
                                                                                  host=host)
     db = create_engine(conn_string)
